@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Economics RA Web App</title>
+	<link href="https://fonts.googleapis.com/css?family=Lato:400,700,900" rel="stylesheet">
+	<style>
+		body {
+			font-size:1em;
+			font-family:'Lato', Helvetica, arial, sans-serif;
+			width:90%;
+			max-width:900px;
+			margin:auto;
+		}
+
+		h1 {
+			font-weight:500;
+			font-size:1.8em;
+			margin-bottom:-5px;
+		}
+
+		h2 {
+		    margin-bottom: 12px;
+		    margin-top: 30px;
+		    font-size: 1.3em;
+		}
+
+		p {
+			line-height:1.5;
+		}
+
+		form {
+			margin: 30px 0;
+	    text-align: center;
+	    padding-top: 30px;
+	    padding-bottom: 30px;
+	    background-color: whitesmoke;
+	    border-radius: 4px;
+		}
+
+		form input {
+			padding:10px;
+			-webkit-appearance:none;
+			-ms-appearance:none;
+			appearance:none;
+			border:1px solid gray;
+			border-radius:3px;
+			font-size:1em;
+			outline:0;
+			font-family:'Lato', Helvetica, arial, sans-serif;
+		}
+
+		form input.input {
+			width:60%;
+			max-width:300px;
+		}
+
+		form input.button {
+			cursor: pointer;
+	    margin-left: 10px;
+	    font-weight: 600;
+	    border: 1px solid gray;
+	    background: gray;
+	    color: white;
+			padding:10px 15px;
+		}
+
+		form.disabled {
+			opacity:.6;
+			pointer-events:none;
+		}
+
+		.response-box {
+			display:none;
+		}
+
+		.response-box__csv {
+			width:100%;
+			padding:10px;
+			-webkit-appearance:none;
+			-ms-appearance:none;
+			appearance:none;
+			border:1px solid gray;
+			border-radius:3px;
+			font-size:1em;
+			outline:0;
+			font-family:'Lato', Helvetica, arial, sans-serif;
+			min-height:500px;
+		}
+
+		#csv-file-download {
+		    text-decoration: none;
+		    color: gray;
+		    border-bottom: 1px solid;
+		}
+
+		.response-box__content {
+	    white-space: pre-wrap;
+	    word-wrap: break-word;
+	    font-family: monaco;
+	    font-size: .9em;
+	    padding: 10px;
+	    background-color: whitesmoke;
+	    border-radius: 2px;
+			display:none /* for now, isn't really necessary */
+		}
+
+		footer {
+			color:gray;
+			font-size:1em;
+			margin-top:50px;
+			margin-bottom:20px;
+			text-align:center;
+		}
+	</style>
+</head>
+<body>
+	<h1>Fake News Finder</h1>
+	<p><b>Running locally! Copy changes to Dropbox to share</b> This web app receives a search term, does the search using the open-source Hoaxy API, and exports the results as a CSV file</p>
+
+	<form onsubmit="return processForm();">
+		<input placeholder='Search terms (e.g. hillary clinton)' class='input' id='query_box' autofocus>
+		<input type='submit' class='button' value='Search' id='submit_button'>
+	</form>
+
+	<div class='response-box'>
+		<h2>Formatted CSV</h2>
+		<p>You can paste this content into a text editor or download a <a href='#' id='csv-file-download'>CSV file</a></p>
+		<textarea class='response-box__csv' readonly></textarea>
+
+		<h2>JSON Response</h2>
+		<div class='response-box__content'></div>
+	</div>
+
+	<!-- jquery makes writing javascript easy & fun -->
+	<script
+	  src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
+	  integrity="sha256-/SIrNqv8h6QGKDuNoLGA4iret+kyesCkHGzVUUV0shc="
+	  crossorigin="anonymous"></script>
+	<script>
+
+	var app = {
+		request_path: '/search_fake_news',
+		query: ''
+	}
+
+	function processForm() {
+		console.info('Form submitted');
+
+		// get input value
+		var query = $('#query_box').val();
+
+		if (!query) {
+			alert('Please enter a valid query before submitting.')
+		}
+		else {
+			// log query
+			app.query = query;
+
+			// disable form
+			$('form').addClass('disabled');
+			$('form input').attr('disabled', true)
+			$('#submit_button').val('Searching...')
+
+			// make http request
+			var request = new XMLHttpRequest();
+			request.open('GET', app.request_path+'?query='+query, true);
+
+			request.onload = function() {
+				if (request.status >= 200 && request.status < 400) {
+					// Success!
+					var resp = request.responseText;
+					resp_obj = JSON.parse(resp);
+					resp_obj.json_unparsed = resp_obj.json;
+					resp_obj.json = JSON.parse(resp_obj.json);
+					console.log(resp_obj);
+
+					// show response
+
+					// -> pure json response
+					$('.response-box__content').html(resp);
+					$('.response-box').show();
+
+					// -> formatted csv response
+					$('.response-box__csv').val(resp_obj.csv);
+
+					$('#csv-file-download').off().on('click', function() {
+						location.href = app.request_path+'?query='+app.query+'&download=true'
+					})
+
+					// reset design
+					$('form').removeClass('disabled');
+					$('#submit_button').val('Search');
+					$('form input').removeAttr('disabled')
+				} else {
+					// We reached our target server, but it returned an error
+					alert('There was an error. Please try again.')
+				}
+			};
+
+			request.onerror = function() {
+				alert('There was an error. Please try again.')
+				// There was a connection error of some sort
+			};
+
+			request.send();
+		}
+
+		return false;
+	}
+
+	</script>
+</body>
+</html>
