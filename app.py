@@ -8,8 +8,8 @@ from flask import render_template
 app = Flask(__name__)
 
 # settings
-FB_GRAPH_API_ACCESS_TOKEN = '720834224743084%7C20163018cebd534e691754afde74b307'
-MASHAPE_API_KEY = 'JWOtin6BxKmshCtTRBK8tBggcaQyp1KyZ1BjsniNdApx4wDToL'
+FB_GRAPH_API_ACCESS_TOKEN = '123xxx456'
+MASHAPE_API_KEY = '123abc456'
 
 # app routes serve specific functionality based on the URL being accessec
 @app.route('/')
